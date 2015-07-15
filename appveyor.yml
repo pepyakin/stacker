@@ -1,14 +1,27 @@
 environment:
+  global:
+    MSYS2_BASEVER: 20150512
   matrix:
-  - TARGET: x86_64-pc-windows-msvc
   - TARGET: x86_64-pc-windows-gnu
+    MSYS2_ARCH: x86_64
   - TARGET: i686-pc-windows-gnu
+    MSYS2_ARCH: i686
+  - TARGET: x86_64-pc-windows-msvc
 install:
   - ps: Start-FileDownload "https://static.rust-lang.org/dist/rust-nightly-${env:TARGET}.exe"
   - rust-nightly-%TARGET%.exe /VERYSILENT /NORESTART /DIR="C:\Program Files (x86)\Rust"
-  - call "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" amd64
   - SET PATH=%PATH%;C:\Program Files (x86)\Rust\bin
-  - SET PATH=%PATH%;C:\MinGW\bin
+  - ps: |
+      if ($env:MSYS2_ARCH -ne "") {
+        Start-FileDownload "http://kent.dl.sourceforge.net/project/msys2/Base/${env:MSYS2_ARCH}/msys2-base-${env:MSYS2_ARCH}-${env:MSYS2_BASEVER}.tar.xz" -FileName "msys2.tar.xz"
+        7z x msys2.tar.xz
+        7z x msys2.tar | out-null
+        & msys64\usr\bin\bash -lc ""
+        & msys64\usr\bin\bash -lc "pacman --noconfirm -Suy gcc"
+      }
+  - call "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" amd64
+  - SET PATH=%PATH%;%cd%\mingw64
+  - SET PATH=%PATH%;%cd%\mingw32
   - rustc -V
   - cargo -V
 
